@@ -84,7 +84,7 @@
                     <Icon @click="collapsedSider" :class="rotateIcon" :style="{margin: '0 20px'}" type="md-menu" size="24"></Icon>
                     <b>Neil Bookstore</b>
                 </Header>
-                <Content :style="{margin: '20px', background: '#fff', minHeight: '260px'}">
+                <Content :style="{margin: '20px', background: '#fff', minHeight: '260px', overflowY: 'auto'}">
                     <RouterView></RouterView>
                 </Content>
             </Layout>
