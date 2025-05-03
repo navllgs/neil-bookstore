@@ -43,7 +43,8 @@ export default {
       monthlyTransactionCount: 0,
       transactionColumns: [
         { title: 'Customer', key: 'customerName' },
-        { title: 'Book ID', key: 'bookId' },
+        { title: 'Book Name', key: 'title' },
+        // { title: 'Book ID', key: 'bookId' },
         { title: 'Quantity', key: 'quantity' },
         { title: 'Price', key: 'price' },
         {
@@ -61,11 +62,16 @@ export default {
     async fetchLatestTransactions() {
       const { data, error } = await supabase
         .from('transaction')
-        .select('*')
+        .select(`*, book(title)`)
         .order('created_at', { ascending: false })
         .limit(5)
 
-      if (!error) this.latestTransactions = data
+      if (!error) {
+        this.latestTransactions = data.map(txn => ({
+          ...txn,
+          title: txn.book?.title || '',
+        }));
+      }
     },
     async fetchMonthlyStats() {
       const startOfMonth = moment().startOf('month').format('YYYY-MM-DD')

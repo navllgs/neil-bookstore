@@ -101,7 +101,7 @@ export default {
       ],
       transactionColumns: [
         { title: 'Customer', key: 'customerName' },
-        { title: 'Book ID', key: 'bookId' },
+        { title: 'Book', key: 'title' },
         { title: 'Note', key: 'note' },
         { title: 'Quantity', key: 'quantity' },
         { title: 'Price', key: 'price' },
@@ -125,12 +125,15 @@ export default {
     async fetchTransactions() {
       const { data, error } = await supabase
         .from('transaction')
-        .select('*')
+        .select(`*, book(title)`)
         .order('id', { ascending: false })
         .limit(20)
 
       if (!error) {
-        this.transactions = data
+        this.transactions = data.map(txn => ({
+          ...txn,
+          title: txn.book?.title || '',
+        }));
       }
     },
     filterBooks() {
