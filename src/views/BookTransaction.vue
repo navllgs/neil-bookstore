@@ -5,7 +5,18 @@
         <FormItem>
           <Input v-model="search" placeholder="Search book..." @input="filterBooks" />
           <Table :columns="bookColumns" :data="filteredBooks" @on-row-click="selectBook" size="small" border
-            height="200" :row-class-name="rowClassName" />
+            height="200" :row-class-name="rowClassName">
+            <template #cover="{ row }">
+              <div
+                style="width: 50px; height: 70px; background: #ccc; display: flex; align-items: center; justify-content: center;">
+                <span v-if="!row.cover"
+                  style="color: #999; font-size: 14px; text-align: center; word-break: break-word;">No
+                  Image</span>
+                <img v-else :src="row.cover" alt="Cover"
+                  style="width: 50px; height: 70px; object-fit: contain; border: 1px solid #eee;" />
+              </div>
+            </template>
+          </Table>
         </FormItem>
         <FormItem label="Book" prop="bookId">
           <!--  <Input v-model="search" placeholder="Search book..." @input="filterBooks" />
@@ -94,6 +105,7 @@ export default {
       search: '',
       transactions: [],
       bookColumns: [
+        { title: 'Cover', key: 'cover', slot: 'cover', width: 80 }, //uploaded image
         { title: 'Title', key: 'title' },
         { title: 'Author', key: 'author' },
         { title: 'Price', key: 'price' },
@@ -114,7 +126,7 @@ export default {
   },
   methods: {
     async fetchBooks() {
-      const { data, error } = await supabase.from('book').select('*').gte('quantity', 1)
+      const { data, error } = await supabase.from('book').select('*').gte('quantity', 1).order('created_at', { ascending: true })
       if (!error) {
         this.books = data
         this.filteredBooks = data

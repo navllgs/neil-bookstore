@@ -20,9 +20,21 @@
         <FormItem label="Stock">
           <Input v-model="form.quantity" type="number" />
         </FormItem>
+
+        <!-- upload image -->
+        <FormItem label="Cover">
+          <Upload :before-upload="handleImageUpload" :show-upload-list="false">
+            <Button icon="ios-cloud-upload-outline">Upload Cover</Button>
+            <div v-if="form.cover" style="margin-top: 8px;">
+              <img :src="form.cover" alt="cover" style="width: 100px; height: auto;" />
+            </div>
+          </Upload>
+        </FormItem>
+        <!-- upload image end -->
+
         <FormItem>
           <Button type="primary" @click="saveBook">{{ form.id ? 'Update' : 'Add' }}</Button>
-          <Button @click="resetForm" style="margin-left: 8px;">Reset</Button>
+          <!-- <Button @click="resetForm" style="margin-left: 8px;">Reset</Button> -->
         </FormItem>
       </Form>
     </Card>
@@ -30,6 +42,16 @@
     <Divider />
 
     <Table :columns="columns" :data="books" border>
+      <template #cover="{ row }">
+        <div
+          style="width: 50px; height: 70px; background: #ccc; display: flex; align-items: center; justify-content: center;">
+          <span v-if="!row.cover" style="color: #999; font-size: 14px; text-align: center; word-break: break-word;">No
+            Image</span>
+          <img v-else :src="row.cover" alt="Cover"
+            style="width: 50px; height: 70px; object-fit: contain; border: 1px solid #eee;" />
+        </div>
+      </template>
+
       <template #action="{ row }">
         <Button size="small" type="info" @click="editBook(row)">Edit</Button>
         <Button size="small" type="error" @click="deleteBook(row.id)" style="margin-left: 8px;">Delete</Button>
@@ -51,11 +73,13 @@ export default {
         author: '',
         genre: '',
         price: null,
-        quantity: null
+        quantity: null,
+        cover: '' // URL of uploaded image
       },
       books: [],
       genres: ['Horror', 'Comedy', 'Science', 'Romance', 'Fantasy'],
       columns: [
+        { title: 'Cover', slot: 'cover', width: 80 }, //uploaded image
         { title: 'Title', key: 'title' },
         { title: 'Author', key: 'author' },
         { title: 'Genre', key: 'genre' },
@@ -75,11 +99,12 @@ export default {
   },
   methods: {
     async fetchBooks() {
-      const { data, error } = await supabase.from('book').select('*')
+      const { data, error } = await supabase.from('book').select('*').order('created_at', { ascending: true })
       if (!error) this.books = data
     },
     async saveBook() {
       if (this.form.id) {
+        // UPDATE HERE
         const { error } = await supabase.from('book').update(this.form).eq('id', this.form.id)
         if (!error) {
           this.$Message.success('Book updated successfully')
@@ -87,7 +112,8 @@ export default {
           this.resetForm()
         }
       } else {
-        const form =  {...this.form}
+        // ADD HERE
+        const form = { ...this.form }
         delete form.id
         const { error } = await supabase.from('book').insert([form])
         if (!error) {
@@ -119,6 +145,28 @@ export default {
         price: null,
         quantity: null
       }
+    },
+
+    //upload image
+    async handleImageUpload(file) {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}.${fileExt}`
+      const filePath = `book-covers/${fileName}`
+
+      const { error } = await supabase.storage.from('bookstore').upload(filePath, file)
+
+      if (!error) {
+        const { data } = supabase.storage.from('bookstore').getPublicUrl(filePath)
+        this.form.cover = data.publicUrl
+        this.$Message.success('Image uploaded')
+      } else {
+        console.log({ error });
+
+        this.$Message.error('Upload failed')
+      }
+
+      // Prevent default upload
+      return false
     }
   }
 }
